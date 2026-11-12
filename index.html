@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Team daily tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#eef2f0;--card:#fff;--ink:#13211d;--mute:#5b6c66;--line:#d6dfdb;--p:#1d7a52;--w:#2a5db0;--l:#b87410;--bad:#b3392f;--soft:#e4ebe8;color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#121917;--card:#1a2420;--ink:#e8f0ec;--mute:#93a59e;--line:#2d3b36;--p:#4cc08a;--w:#7aa7f0;--l:#e8a94a;--bad:#f07a6e;--soft:#243029;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#121917;--card:#1a2420;--ink:#e8f0ec;--mute:#93a59e;--line:#2d3b36;--p:#4cc08a;--w:#7aa7f0;--l:#e8a94a;--bad:#f07a6e;--soft:#243029;color-scheme:dark}
+*{box-sizing:border-box}html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 "Bricolage Grotesque",system-ui,-apple-system,"Segoe UI",sans-serif}
+main{max-width:920px;margin:0 auto;padding:16px 14px 40px}
+h1{font-size:24px;font-weight:800;margin:4px 0 12px;letter-spacing:-.01em}
+h2{font-size:17px;font-weight:600;margin:26px 0 10px}
+.bar{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+button,input{font:inherit;color:inherit}
+button{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:8px 12px;cursor:pointer}
+button:focus-visible,input:focus-visible{outline:2px solid var(--w);outline-offset:1px}
+input{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:8px 10px;min-width:0}
+.sum{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin:14px 0}
+@media(min-width:640px){.sum{grid-template-columns:repeat(5,1fr)}}
+.box{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.box b{display:block;font-size:28px;line-height:1.1;font-weight:800}
+.box span{color:var(--mute);font-size:13px}
+.p{color:var(--p)}.w{color:var(--w)}.l{color:var(--l)}.bad{color:var(--bad)}
+.row{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-bottom:8px;display:grid;grid-template-columns:1fr auto;gap:8px 12px;align-items:center}
+.nm{font-weight:600}.sub{color:var(--mute);font-size:13px}
+.seg{display:flex;gap:4px}
+.seg button{padding:6px 10px;font-size:13px}
+.seg button.on[data-s=P]{background:var(--p);border-color:var(--p);color:#fff}
+.seg button.on[data-s=W]{background:var(--w);border-color:var(--w);color:#fff}
+.seg button.on[data-s=L]{background:var(--l);border-color:var(--l);color:#fff}
+.hrs{display:flex;gap:6px;align-items:center}
+.hrs input{width:78px}
+.tag{font-size:12px;padding:2px 8px;border-radius:99px;background:var(--soft);color:var(--mute)}
+.tag.ok{background:var(--p);color:#fff}.tag.no{background:var(--bad);color:#fff}
+.scroll{overflow-x:auto;background:var(--card);border:1px solid var(--line);border-radius:10px}
+table{border-collapse:collapse;width:100%;min-width:760px;font-size:13px}
+th,td{padding:7px 8px;text-align:center;border-bottom:1px solid var(--line)}
+th:first-child,td:first-child{text-align:left;position:sticky;left:0;background:var(--card)}
+tfoot td{font-weight:600}
+.empty{background:var(--card);border:1px dashed var(--line);border-radius:10px;padding:16px;color:var(--mute)}
+.mem{display:flex;gap:8px;align-items:center;margin-bottom:6px}
+.mem span{flex:1}.mem input{width:70px}
+</style></head><body><main>
+<h1>Team daily tracker</h1>
+<div class="bar">
+  <button id="prev" aria-label="Previous day">&lsaquo;</button>
+  <input type="date" id="date" aria-label="Date">
+  <button id="next" aria-label="Next day">&rsaquo;</button>
+  <button id="today">Today</button>
+</div>
+<div class="sum" id="sum"></div>
+<h2>Today’s roster</h2>
+<div id="roster"></div>
+<h2>Weekly report</h2>
+<div class="bar" style="margin-bottom:8px"><span class="sub" id="wk"></span></div>
+<div id="weekly"></div>
+<h2>Manage team</h2>
+<div id="manage"></div>
+<form class="bar" id="add" style="margin-top:8px" onsubmit="return false">
+  <input id="names" placeholder="Names, separated by commas" style="flex:1;min-width:180px">
+  <input id="tgt" type="number" step="0.25" min="0" value="8" style="width:80px" title="Hours target" aria-label="Daily target hours"><input id="ktgt" type="number" step="1" min="0" value="5" style="width:80px" title="Tasks target" aria-label="Daily task target">
+  <button id="addbtn" type="button">Add members</button>
+</form>
+<p class="sub">First number is the daily hours target, second is the daily tasks target (0 = tasks not tracked). A member meets the day’s target only when both are met. Saved in this browser.</p>
+</main>
+<script>
+const KEY="team-tracker-v1";
+let S={members:[],days:{}};
+try{const r=localStorage.getItem(KEY);if(r)S=JSON.parse(r)}catch(e){}
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
+const ymd=d=>d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+const parse=s=>{const [y,m,d]=s.split("-").map(Number);return new Date(y,m-1,d)};
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const $=id=>document.getElementById(id);
+let cur=ymd(new Date());
+const rec=(d,id)=>(S.days[d]||{})[id]||{};
+const set=(d,id,patch)=>{S.days[d]=S.days[d]||{};S.days[d][id]=Object.assign({},S.days[d][id],patch);save()};
+const tt=m=>Number(m.k)||0;
+const hok=(m,r)=>r.h!==undefined&&r.h!==""&&Number(r.h)>=m.t;
+const tok=(m,r)=>!tt(m)||(r.k!==undefined&&r.k!==""&&Number(r.k)>=tt(m));
+const met=(m,r)=>(r.s==="P"||r.s==="W")&&hok(m,r)&&tok(m,r);
+const fmt=n=>Math.round(n*100)/100;
+
+function render(){
+  $("date").value=cur;
+  const c={P:0,W:0,L:0,N:0,M:0};
+  S.members.forEach(m=>{const r=rec(cur,m.id);if(r.s)c[r.s]++;else c.N++;if(met(m,r))c.M++});
+  const work=c.P+c.W;
+  $("sum").innerHTML=
+   `<div class="box"><b class="p">${c.P}</b><span>In office</span></div>`+
+   `<div class="box"><b class="w">${c.W}</b><span>Work from home</span></div>`+
+   `<div class="box"><b class="l">${c.L}</b><span>On leave</span></div>`+
+   `<div class="box"><b>${c.N}</b><span>Not marked</span></div>`+
+   `<div class="box"><b class="${work&&c.M===work?"p":""}">${c.M}/${work}</b><span>Met target</span></div>`;
+  if(!S.members.length){
+    $("roster").innerHTML='<div class="empty">No team members yet. Add names in “Manage team” below.</div>';
+  }else{
+    $("roster").innerHTML=S.members.map(m=>{
+      const r=rec(cur,m.id),can=r.s==="P"||r.s==="W";
+      const done=r.h!==undefined&&r.h!==""&&(!tt(m)||(r.k!==undefined&&r.k!==""));
+      const tag=!can?"":met(m,r)?'<span class="tag ok">Target met</span>':(!done?'<span class="tag">Entry pending</span>':'<span class="tag no">Below target</span>');
+      return `<div class="row" data-id="${m.id}"><div><div class="nm">${esc(m.name)}</div><div class="sub">Target ${fmt(m.t)} h${tt(m)?" · "+tt(m)+" tasks":""} ${tag}</div></div>
+      <div class="seg">${[["P","Office"],["W","WFH"],["L","Leave"]].map(([k,t])=>`<button data-s="${k}" class="${r.s===k?"on":""}">${t}</button>`).join("")}</div>
+      <div class="hrs">${can?`<input data-f="h" type="number" step="0.25" min="0" max="24" inputmode="decimal" placeholder="Hours" value="${r.h??""}" aria-label="Platform hours for ${esc(m.name)}">${tt(m)?`<input data-f="k" type="number" step="1" min="0" inputmode="numeric" placeholder="Tasks done" value="${r.k??""}" aria-label="Tasks completed by ${esc(m.name)}">`:""}`:""}</div></div>`}).join("");
+  }
+  weekly();manage();
+}
+
+function weekDays(){const d=parse(cur),off=(d.getDay()+6)%7;d.setDate(d.getDate()-off);return[...Array(7)].map((_,i)=>{const x=new Date(d);x.setDate(d.getDate()+i);return ymd(x)})}
+function weekly(){
+  const ds=weekDays(),L=["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
+  $("wk").textContent=ds[0]+" to "+ds[6];
+  if(!S.members.length){$("weekly").innerHTML='<div class="empty">The weekly report appears once you add members.</div>';return}
+  let rows="";
+  const tot=ds.map(()=>({P:0,W:0,L:0,M:0}));
+  S.members.forEach(m=>{
+    let hrs=0,tk=0,wd=0,mt=0,lv=0;
+    const cells=ds.map((d,i)=>{
+      const r=rec(d,m.id);
+      if(!r.s)return'<td class="sub">–</td>';
+      tot[i][r.s]++;
+      if(r.s==="L"){lv++;return'<td class="l">Leave</td>'}
+      wd++;const h=Number(r.h)||0;hrs+=h;tk+=Number(r.k)||0;const ok=met(m,r);if(ok){mt++;tot[i].M++}
+      return`<td class="${ok?"p":"bad"}" title="${r.s==="W"?"WFH":"Office"}">${fmt(h)}h${tt(m)?" · "+(Number(r.k)||0)+"t":""}${r.s==="W"?" ⌂":""}</td>`});
+    rows+=`<tr><td>${esc(m.name)}</td>${cells.join("")}<td><b>${fmt(hrs)}</b></td><td><b>${tk}</b></td><td>${mt}/${wd}</td><td>${wd?fmt(hrs/wd):"–"}</td><td>${lv}</td></tr>`});
+  const foot=`<tr><td>Team</td>${tot.map(t=>`<td>${t.P+t.W+t.L?`${t.P}·${t.W}·${t.L}<br><span class="p">${t.M} met</span>`:"–"}</td>`).join("")}<td colspan="5" class="sub">office · WFH · leave</td></tr>`;
+  $("weekly").innerHTML=`<div class="scroll"><table><thead><tr><th>Member</th>${ds.map((d,i)=>`<th>${L[i]}<br><span class="sub">${d.slice(8)}</span></th>`).join("")}<th>Total h</th><th>Tasks</th><th>Days met</th><th>Avg h</th><th>Leave</th></tr></thead><tbody>${rows}</tbody><tfoot>${foot}</tfoot></table></div>
+  <p class="sub">Green = hours and tasks target met, red = not met (h = hours, t = tasks), ⌂ = work from home. Leave days don’t count against the target.</p>`;
+}
+
+function manage(){
+  $("manage").innerHTML=S.members.map(m=>`<div class="mem" data-id="${m.id}"><span>${esc(m.name)}</span><input data-f="t" type="number" step="0.25" min="0" value="${m.t}" title="Hours target" aria-label="Hours target for ${esc(m.name)}"><input data-f="k" type="number" step="1" min="0" value="${tt(m)}" title="Tasks target" aria-label="Tasks target for ${esc(m.name)}"><button class="rm" aria-label="Remove ${esc(m.name)}">Remove</button></div>`).join("")||'<div class="sub">Nobody added yet.</div>';
+}
+
+$("roster").addEventListener("click",e=>{
+  const b=e.target.closest("button[data-s]");if(!b)return;
+  const id=b.closest(".row").dataset.id,r=rec(cur,id);
+  if(r.s===b.dataset.s)set(cur,id,{s:undefined,h:undefined,k:undefined});
+  else set(cur,id,{s:b.dataset.s,h:b.dataset.s==="L"?undefined:r.h,k:b.dataset.s==="L"?undefined:r.k});
+  render();
+});
+$("roster").addEventListener("change",e=>{
+  if(e.target.type!=="number")return;
+  const id=e.target.closest(".row").dataset.id;
+  set(cur,id,{[e.target.dataset.f]:e.target.value===""?undefined:Number(e.target.value)});render();
+});
+$("manage").addEventListener("change",e=>{
+  const m=S.members.find(x=>x.id===e.target.closest(".mem").dataset.id);
+  if(m){m[e.target.dataset.f]=Number(e.target.value)||0;save();render()}
+});
+$("manage").addEventListener("click",e=>{
+  if(!e.target.classList.contains("rm"))return;
+  const id=e.target.closest(".mem").dataset.id,m=S.members.find(x=>x.id===id);
+  if(!confirm("Remove "+m.name+" and their history?"))return;
+  S.members=S.members.filter(x=>x.id!==id);Object.values(S.days).forEach(d=>delete d[id]);save();render();
+});
+$("addbtn").onclick=()=>{
+  const t=Number($("tgt").value)||0,k=Number($("ktgt").value)||0;
+  $("names").value.split(",").map(s=>s.trim()).filter(Boolean).forEach(n=>S.members.push({id:"m"+Date.now().toString(36)+Math.random().toString(36).slice(2,5),name:n,t,k}));
+  $("names").value="";save();render();
+};
+const shift=n=>{const d=parse(cur);d.setDate(d.getDate()+n);cur=ymd(d);render()};
+$("prev").onclick=()=>shift(-1);$("next").onclick=()=>shift(1);
+$("today").onclick=()=>{cur=ymd(new Date());render()};
+$("date").onchange=e=>{if(e.target.value){cur=e.target.value;render()}};
+render();
+</script></body></html>

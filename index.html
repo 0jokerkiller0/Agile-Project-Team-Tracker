@@ -49,6 +49,7 @@ tfoot td{font-weight:600}
   <input type="date" id="date" aria-label="Date">
   <button id="next" aria-label="Next day">&rsaquo;</button>
   <button id="today">Today</button>
+  <span class="sub" id="sync" role="status"></span>
 </div>
 <div class="sum" id="sum"></div>
 <h2>Today’s roster</h2>
@@ -69,7 +70,10 @@ tfoot td{font-weight:600}
 const KEY="team-tracker-v1";
 let S={members:[],days:{}};
 try{const r=localStorage.getItem(KEY);if(r)S=JSON.parse(r)}catch(e){}
-const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
+let ref=null,tm=null,busy=false,dirty=false;
+const sync=t=>{const e=document.getElementById("sync");if(e)e.textContent=t};
+async function flush(){tm=null;if(busy){dirty=true;return}busy=true;try{await ref.set({json:JSON.stringify(S)});sync("Synced")}catch(e){sync("Not synced")}busy=false;if(dirty){dirty=false;flush()}}
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}if(ref){sync("Saving…");clearTimeout(tm);tm=setTimeout(flush,400)}};
 const ymd=d=>d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
 const parse=s=>{const [y,m,d]=s.split("-").map(Number);return new Date(y,m-1,d)};
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
@@ -166,4 +170,16 @@ $("prev").onclick=()=>shift(-1);$("next").onclick=()=>shift(1);
 $("today").onclick=()=>{cur=ymd(new Date());render()};
 $("date").onchange=e=>{if(e.target.value){cur=e.target.value;render()}};
 render();
+(async()=>{
+ try{
+  const db=await claude.use("db");
+  if(!db){sync("This device only");return}
+  const r=db.doc("tracker/main");
+  const snap=await r.get();
+  if(snap.exists){const j=snap.data().json;if(j&&j!==JSON.stringify(S)){S=JSON.parse(j);try{localStorage.setItem(KEY,j)}catch(e){}render()}}
+  ref=r;
+  if(!snap.exists&&S.members.length){sync("Saving…");await flush()}else sync("Synced");
+  r.onSnapshot(s=>{if(!s.exists||tm||busy)return;const j=s.data().json;if(j&&j!==JSON.stringify(S)){S=JSON.parse(j);try{localStorage.setItem(KEY,j)}catch(e){}render()}},()=>sync("Not synced"));
+ }catch(e){sync("This device only")}
+})();
 </script></body></html>

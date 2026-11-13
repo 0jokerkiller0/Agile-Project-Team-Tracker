@@ -7,7 +7,7 @@ A single-page tool for a team lead to track daily attendance (office / WFH / lea
 - Summary cards: in office, WFH, on leave, not marked, and how many met target
 - Per-member targets for hours and tasks (a day counts as met only when both are reached; task target 0 = not tracked)
 - Weekly report (Mon–Sun): daily hours/tasks, totals, days target met, average hours, leave days
-- Data is saved in the browser (localStorage), so use the same browser on one device
+- Data is saved in the browser (localStorage). When opened as a Claude artifact it also syncs across devices; on GitHub Pages it stays in that browser only
 
 ## Run
 Open `index.html` in a browser. No build step or dependencies.
